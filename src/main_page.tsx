@@ -1,12 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { WalletMultiButton, WalletDisconnectButton } from '@solana/wallet-adapter-react-ui';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { CLAIMR_CONTAINER_ID } from './constants';
 import { nanoid } from 'nanoid';
-import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
-
+import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import bs58 from 'bs58';
+import { createAppKit, useAppKit, useAppKitAccount, useAppKitProvider, useDisconnect } from '@reown/appkit/react';
+import { metadata, projectId, solanaWeb3JsAdapter } from './config';
+import { solana, solanaTestnet, solanaDevnet } from '@reown/appkit/networks';
+import { useAppKitConnection } from '@reown/appkit-adapter-solana/react';
+import type { Provider } from '@reown/appkit-adapter-solana/react';
 
 function get_sign_message(message: string, domain: string, ref_id: string) {
     let full_message = `${message}\n\n`;
@@ -19,19 +20,38 @@ function get_sign_message(message: string, domain: string, ref_id: string) {
     return full_message;
 }
 
-export const MainPage: FC = () => { 
-    
+createAppKit({
+    projectId,
+    metadata,
+    themeMode: 'dark',
+    networks: [solana, solanaTestnet, solanaDevnet],
+    adapters: [solanaWeb3JsAdapter],
+    features: {
+        analytics: true,
+        email: false,
+        socials: false,
+    },
+    themeVariables: {
+        '--w3m-accent': '#000000',
+    },
+});
+
+export const MainPage: FC = () => {
     const [connected, set_connected] = useState(false);
     const [signature, set_signature] = useState('');
-    const { publicKey, connected: is_connected, disconnect, signMessage, signTransaction } = useWallet();
-    const { connection } = useConnection();
 
-    const [active_address, set_active_address] = useState(publicKey?.toString());
+    const { disconnect } = useDisconnect();
+    const { open } = useAppKit();
+    const { isConnected, address } = useAppKitAccount();
+    const { connection } = useAppKitConnection();
+    const { walletProvider } = useAppKitProvider<Provider>('solana');
+
+    const [active_address, set_active_address] = useState(address?.toString());
     const [_, set_ballance] = useState<number | null>(null);
 
     const on_request = useCallback(
         async (network: string, request: any, program_id: string, instruction_type: string, args: any[]) => {
-            if (!publicKey || !signTransaction) {
+            /*if (!address || !signTransaction) {
                 console.log('Wallet not connected or does not support transaction signing');
                 return '';
             }
@@ -63,21 +83,22 @@ export const MainPage: FC = () => {
             } catch (err) {
                 console.error('Transaction failed:', err);
                 return '';
-            }
+            }*/
         },
-        [publicKey, signTransaction, connection]
+        [address, connection]
     );
 
     const fetchBalance = useCallback(async () => {
-        if (publicKey) {
+        if (address && connection) {
             try {
-                const balance = await connection.getBalance(publicKey);
+                const wallet = new PublicKey(address);
+                const balance = await connection.getBalance(wallet);
                 set_ballance(balance / LAMPORTS_PER_SOL);
             } catch (error) {
                 console.error('Error fetching balance:', error);
             }
         }
-    }, [publicKey, connection]);
+    }, [address, connection]);
 
     useEffect(() => {
         const signature = localStorage?.getItem('demo-signature');
@@ -112,34 +133,29 @@ export const MainPage: FC = () => {
     }, [on_request]);
 
     useEffect(() => {
-        if (is_connected) {
+        if (isConnected) {
             set_connected(true);
             fetchBalance();
         }
-    }, [is_connected, fetchBalance]);
+    }, [isConnected, fetchBalance]);
 
     useEffect(() => {
         if (
-            (connected && !is_connected && localStorage?.getItem('demo-signature')) ||
-            (active_address && publicKey && active_address !== publicKey.toString())
+            (connected && !isConnected && localStorage?.getItem('demo-signature')) ||
+            (active_address && address && active_address !== address)
         ) {
             set_signature('');
             set_connected(false);
             localStorage?.removeItem('demo-signature');
             (window as any).claimr?.logout();
         }
-    }, [connected, is_connected, publicKey, active_address]);
+    }, [connected, isConnected, address, active_address]);
 
     useEffect(() => {
-        set_active_address(publicKey?.toString());
-    }, [publicKey]);
+        set_active_address(address?.toString());
+    }, [address]);
 
     const on_sign_message = async () => {
-        if (!signMessage) {
-            console.error('Wallet does not support message signing');
-            return;
-        }
-
         const params = new URLSearchParams(window.location.search);
         const message = get_sign_message(
             `claimr ⚡ dApp example`,
@@ -149,12 +165,12 @@ export const MainPage: FC = () => {
 
         try {
             const encoded_message = new TextEncoder().encode(message);
-            const signature = await signMessage(encoded_message);
+            const signature = await walletProvider.signMessage(encoded_message);
             if (signature) {
                 const bg58_signature = bs58.encode(signature);
                 set_signature(bg58_signature);
                 localStorage?.setItem('demo-signature', bg58_signature);
-                (window as any).claimr?.connect_wallet(publicKey?.toString(), bg58_signature, message, 'solana');
+                (window as any).claimr?.connect_wallet(address, bg58_signature, message, 'solana');
             }
         } catch (err) {
             console.error('Message signing failed:', err);
@@ -172,8 +188,16 @@ export const MainPage: FC = () => {
                 <div className='logo'>Your Solana dApp logo</div>
                 <div className='flex-spacer' />
                 <div className='wallet-buttons'>
-                    <WalletMultiButton />
-                    {is_connected && <WalletDisconnectButton />}
+                    {!isConnected && (
+                        <button className='button' onClick={() => open()}>
+                            Connect Wallet
+                        </button>
+                    )}
+                    {isConnected && (
+                        <button className='button' onClick={() => disconnect()}>
+                            Disconnect
+                        </button>
+                    )}
                 </div>
             </header>
             <div className='banner'>
@@ -214,9 +238,11 @@ export const MainPage: FC = () => {
                                 Please connect your Solana cryptocurrency wallet to proceed. This will allow us to
                                 securely verify your identity and grant you access to the platform's features.
                             </div>
-                            {!is_connected ? (
+                            {!isConnected ? (
                                 <div className='connect-wallet-container'>
-                                    <WalletMultiButton className='custom-wallet-button' />
+                                    <button className='button' onClick={() => open()}>
+                                        Connect Wallet
+                                    </button>
                                 </div>
                             ) : (
                                 <div className='wallet-actions'>
