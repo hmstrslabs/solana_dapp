@@ -39,7 +39,7 @@ export default defineConfig({
         },
         rollupOptions: {
             external: [
-                /^@trezor\/.*/, 'rpc-websockets'
+                /^@trezor\/.*/
             ],
             plugins: [
                 nodePolyfills(),
@@ -66,6 +66,7 @@ export default defineConfig({
             'bs58',
             'buffer',
             'process/browser.js',
+            'rpc-websockets',
         ],
         esbuildOptions: {
             define: {
