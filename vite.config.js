@@ -38,6 +38,12 @@ export default defineConfig({
             transformMixedEsModules: true,
         },
         rollupOptions: {
+            external: [
+                /^@trezor\/.*/, 'rpc-websockets'
+            ],
+            plugins: [
+                nodePolyfills(),
+            ],
             output: {
                 manualChunks: {
                     vendor: ['react', 'react-dom'],

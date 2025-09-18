@@ -26,6 +26,7 @@
         "react-dom": "^18.2.0"
     },
     "devDependencies": {
+        "@rollup/plugin-commonjs": "^28.0.6",
         "@types/jest": "^27.5.2",
         "@types/node": "^20.10.0",
         "@types/react": "^18.3.24",
@@ -40,9 +41,11 @@
         "eslint-plugin-react-hooks": "^4.6.0",
         "prettier": "^3.1.0",
         "process": "^0.11.10",
+        "rollup-plugin-polyfill-node": "^0.13.0",
         "typescript": "^5.9.2",
         "util": "^0.12.5",
         "vite": "^4.5.0",
+        "vite-plugin-commonjs": "^0.10.4",
         "vite-plugin-node-polyfills": "^0.17.0"
     }
 }
