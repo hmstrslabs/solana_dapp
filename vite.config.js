@@ -21,11 +21,11 @@ export default defineConfig({
     resolve: {
         alias: {
             'process/': 'process/browser.js',
-            'process': 'process/browser.js',
-            'stream': 'readable-stream',
-            'buffer': 'buffer',
-            'util': 'util',
-        }
+            process: 'process/browser.js',
+            stream: 'readable-stream',
+            buffer: 'buffer',
+            util: 'util',
+        },
     },
     server: {
         port: 3000,
@@ -37,32 +37,11 @@ export default defineConfig({
         commonjsOptions: {
             transformMixedEsModules: true,
         },
-        rollupOptions: {
-            external: [
-                /^@trezor\/.*/
-            ],
-            plugins: [
-                nodePolyfills(),
-            ],
-            output: {
-                manualChunks: {
-                    vendor: ['react', 'react-dom'],
-                    solana: [
-                        '@solana/web3.js',
-                        '@solana/wallet-adapter-react',
-                        '@solana/wallet-adapter-react-ui',
-                        '@solana/wallet-adapter-wallets',
-                    ],
-                },
-            },
-        },
     },
     optimizeDeps: {
         include: [
-            '@solana/web3.js',
-            '@solana/wallet-adapter-react',
-            '@solana/wallet-adapter-react-ui',
-            '@solana/wallet-adapter-wallets',
+            '@reown/appkit',
+            '@reown/appkit-adapter-solana',
             'bs58',
             'buffer',
             'process/browser.js',
