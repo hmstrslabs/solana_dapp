@@ -20,7 +20,6 @@
         "react-dom": "^18.2.0"
     },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^28.0.6",
         "@types/jest": "^27.5.2",
         "@types/node": "^20.10.0",
         "@types/react": "^18.3.24",
@@ -29,7 +28,6 @@
         "@typescript-eslint/parser": "^6.13.1",
         "@vitejs/plugin-react": "^4.7.0",
         "buffer": "^6.0.3",
-        "depcheck": "^1.4.7",
         "eslint": "^8.54.0",
         "eslint-plugin-react": "^7.33.2",
         "eslint-plugin-react-hooks": "^4.6.0",
